@@ -1,5 +1,6 @@
 #include <QDesktopWidget>
 #include <QFileInfo>
+#include <QLabel>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QMouseEvent>
@@ -68,6 +69,16 @@ void VideoForm::initUI()
     ui->keepRadioWidget->setWidget(m_videoWidget);
     ui->keepRadioWidget->setWidthHeightRadio(m_widthHeightRatio);
 
+    m_fpsLabel = new QLabel(m_videoWidget);
+    QFont ft;
+    ft.setPointSize(15);
+    ft.setWeight(QFont::Light);
+    ft.setBold(true);
+    m_fpsLabel->setFont(ft);
+    m_fpsLabel->move(5, 15);
+    m_fpsLabel->setMinimumWidth(100);
+    m_fpsLabel->setStyleSheet(R"(QLabel {color: #00FF00;})");
+
     setMouseTracking(true);
     m_videoWidget->setMouseTracking(true);
     ui->keepRadioWidget->setMouseTracking(true);
@@ -77,14 +88,14 @@ QRect VideoForm::getGrabCursorRect()
 {
     QRect rc;
 #if defined(Q_OS_WIN32)
-    rc = QRect(m_videoWidget->mapToGlobal(m_videoWidget->pos()), m_videoWidget->size());
+    rc = QRect(ui->keepRadioWidget->mapToGlobal(m_videoWidget->pos()), m_videoWidget->size());
     // high dpi support
     rc.setTopLeft(rc.topLeft() * m_videoWidget->devicePixelRatio());
     rc.setBottomRight(rc.bottomRight() * m_videoWidget->devicePixelRatio());
 #elif defined(Q_OS_OSX)
     rc = m_videoWidget->geometry();
-    rc.setTopLeft(m_videoWidget->mapToGlobal(rc.topLeft()));
-    rc.setBottomRight(m_videoWidget->mapToGlobal(rc.bottomRight()));
+    rc.setTopLeft(ui->keepRadioWidget->mapToGlobal(rc.topLeft()));
+    rc.setBottomRight(ui->keepRadioWidget->mapToGlobal(rc.bottomRight()));
     rc.setX(rc.x() + 100);
     rc.setY(rc.y() + 30);
     rc.setWidth(rc.width() - 180);
@@ -113,6 +124,14 @@ void VideoForm::resizeSquare()
 void VideoForm::removeBlackRect()
 {
     resize(ui->keepRadioWidget->goodSize());
+}
+
+void VideoForm::showFPS(bool show)
+{
+    if (!m_fpsLabel) {
+        return;
+    }
+    m_fpsLabel->setVisible(show);
 }
 
 void VideoForm::updateRender(const AVFrame *frame)
@@ -427,6 +446,15 @@ void VideoForm::onSwitchFullScreen()
         ::SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
 #endif
     }
+}
+
+void VideoForm::updateFPS(quint32 fps)
+{
+    qDebug() << "FPS:" << fps;
+    if (!m_fpsLabel) {
+        return;
+    }
+    m_fpsLabel->setText(QString("FPS:%1").arg(fps));
 }
 
 void VideoForm::staysOnTop(bool top)
